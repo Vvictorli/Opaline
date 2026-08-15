@@ -5,6 +5,14 @@ import UIKit
 extension VideosViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(
         _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        usesShortsGrid || useRails ? 12 : 8
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
         guard !isLoadingInitial else {
@@ -77,10 +85,11 @@ extension VideosViewController: UICollectionViewDelegateFlowLayout {
     ) -> UIEdgeInsets {
         // The default per-section inset would double the vertical gap
         // between stacked sections — only the first keeps a top inset.
-        UIEdgeInsets(
-            top: section == 0 ? 12 : 0,
+        let verticalInset: CGFloat = usesShortsGrid || useRails ? 12 : 8
+        return UIEdgeInsets(
+            top: section == 0 ? verticalInset : 0,
             left: 8,
-            bottom: 12,
+            bottom: verticalInset,
             right: 8
         )
     }

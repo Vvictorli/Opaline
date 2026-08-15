@@ -77,7 +77,7 @@ extension VideosViewController {
         let height: CGFloat = usesShortsGrid
             ? width * ShortThumbnailCell.aspectRatio
                 + ShortThumbnailCell.captionHeight
-            : width * (9.0 / 16.0) + 92
+            : width * (9.0 / 16.0) + VideoCell.gridCaptionHeight
         let newSize = CGSize(
             width: width,
             height: height

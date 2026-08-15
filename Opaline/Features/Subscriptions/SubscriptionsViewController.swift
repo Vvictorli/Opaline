@@ -75,7 +75,6 @@ class SubscriptionsViewController: UIViewController, ScrollableToTop {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "subscriptions.title".localized
         AppLog.subs("viewDidLoad")
         setupTableView()
         setupSpinner()

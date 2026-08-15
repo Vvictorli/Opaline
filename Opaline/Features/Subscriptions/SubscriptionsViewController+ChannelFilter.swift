@@ -56,7 +56,7 @@ extension SubscriptionsViewController {
         }
         selectedChannel = nil
         channelBar.setSelectedChannelId(nil)
-        title = "subscriptions.title".localized
+        title = nil
         navigationItem.leftBarButtonItem = nil
         videos = stashedVideos
         shortsShelf = stashedShorts

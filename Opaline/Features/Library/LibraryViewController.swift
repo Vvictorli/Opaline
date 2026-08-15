@@ -1,7 +1,7 @@
 import UIKit
 
-/// Library screen with a UISegmentedControl in the nav bar titleView.
-/// Three embedded child nav controllers — no push/pop, instant switching.
+/// Library screen with a secondary segmented bar below the shared toolbar.
+/// Three embedded child nav controllers switch without changing navigation.
 final class LibraryViewController: UIViewController {
     // MARK: - Segments
 
@@ -53,7 +53,8 @@ final class LibraryViewController: UIViewController {
     private let segmentedControl = UISegmentedControl(
         items: Segment.allCases.map(\.title)
     )
-
+    private let segmentBar = UIView()
+    private let segmentSeparator = UIView()
     private let contentView = UIView()
     private var currentChild: UINavigationController?
 
@@ -88,18 +89,57 @@ final class LibraryViewController: UIViewController {
 
     private func setupSegmentedControl() {
         segmentedControl.selectedSegmentIndex = 0
-        segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
-        // Size it to fit comfortably in the nav bar
-        segmentedControl.sizeToFit()
-        segmentedControl.frame.size.width = min(segmentedControl.frame.width, 360)
-        navigationItem.titleView = segmentedControl
+        segmentedControl.addTarget(
+            self,
+            action: #selector(segmentChanged),
+            for: .valueChanged
+        )
+        segmentBar.translatesAutoresizingMaskIntoConstraints = false
+        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        segmentSeparator.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(segmentBar)
+        segmentBar.addSubview(segmentedControl)
+        segmentBar.addSubview(segmentSeparator)
+        NSLayoutConstraint.activate([
+            segmentBar.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor
+            ),
+            segmentBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            segmentBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            segmentBar.heightAnchor.constraint(equalToConstant: 52),
+
+            segmentedControl.topAnchor.constraint(
+                equalTo: segmentBar.topAnchor,
+                constant: 8
+            ),
+            segmentedControl.leadingAnchor.constraint(
+                equalTo: segmentBar.leadingAnchor,
+                constant: 16
+            ),
+            segmentedControl.trailingAnchor.constraint(
+                equalTo: segmentBar.trailingAnchor,
+                constant: -16
+            ),
+            segmentedControl.heightAnchor.constraint(equalToConstant: 36),
+
+            segmentSeparator.leadingAnchor.constraint(
+                equalTo: segmentBar.leadingAnchor
+            ),
+            segmentSeparator.trailingAnchor.constraint(
+                equalTo: segmentBar.trailingAnchor
+            ),
+            segmentSeparator.bottomAnchor.constraint(
+                equalTo: segmentBar.bottomAnchor
+            ),
+            segmentSeparator.heightAnchor.constraint(equalToConstant: 0.5)
+        ])
     }
 
     private func setupContentView() {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(contentView)
         NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentView.topAnchor.constraint(equalTo: segmentBar.bottomAnchor),
             contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -142,7 +182,10 @@ final class LibraryViewController: UIViewController {
     private func applyTheme() {
         let theme = ThemeManager.shared
         view.backgroundColor = theme.background
+        segmentBar.backgroundColor = theme.surface
+        segmentSeparator.backgroundColor = theme.separator
         contentView.backgroundColor = theme.background
+        segmentedControl.backgroundColor = theme.controlSurface
         if #available(iOS 13, *) {
             segmentedControl.selectedSegmentTintColor = theme.accent
             segmentedControl.setTitleTextAttributes(
@@ -153,6 +196,8 @@ final class LibraryViewController: UIViewController {
                 [.foregroundColor: UIColor.white],
                 for: .selected
             )
+        } else {
+            segmentedControl.tintColor = theme.accent
         }
     }
 }

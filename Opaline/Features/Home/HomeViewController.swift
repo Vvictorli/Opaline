@@ -54,7 +54,7 @@ class HomeViewController: VideosViewController {
 
     override var columns: Int {
         if UIDevice.current.userInterfaceIdiom == .phone {
-            return 1
+            return 2
         }
         let width = view.bounds.width
         if width < 500 {
@@ -101,10 +101,8 @@ class HomeViewController: VideosViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "home.title".localized
         AppLog.home("viewDidLoad")
         setupEmptyViews()
-        setupChipBar()
         setupToolbar()
         observeSignOut()
         observeTokenRefresh()

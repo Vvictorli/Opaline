@@ -52,9 +52,9 @@ extension SubscriptionsViewController {
 
     func setupTableView() {
         tableView.register(
-            SubscriptionVideoCell.self,
+            VideoGridRowCell.self,
             forCellReuseIdentifier:
-                SubscriptionVideoCell.reuseId
+                VideoGridRowCell.reuseId
         )
         tableView.register(
             ShortsShelfCell.self,

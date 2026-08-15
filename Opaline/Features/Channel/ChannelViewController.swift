@@ -36,7 +36,7 @@ final class ChannelViewController: VideosViewController {
             return UIDevice.current.userInterfaceIdiom == .phone ? 3 : 6
         }
         if UIDevice.current.userInterfaceIdiom == .phone {
-            return 1
+            return 2
         }
         let width = view.bounds.width
         if width < 500 {

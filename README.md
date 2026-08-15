@@ -16,6 +16,20 @@
 
 </div>
 
+## 中文用户界面优化版
+
+本 Fork 保留 Opaline 原有的播放、账号与数据能力，并参考 Bilibili 移动端的信息密度和浏览习惯，对视频浏览界面进行了本地化调整，让中文用户可以更高效地浏览内容：
+
+- 首页、订阅、频道、搜索、历史记录和播放列表中的普通视频统一采用紧凑的双列布局
+- 视频卡片移除投稿者头像，信息顺序调整为“标题 → 播放量/发布时间 → 投稿者名称”
+- 缩小卡片与上下视频之间的留白，在手机屏幕上同时展示更多内容
+- 首页默认直接显示全部推荐，不再占用空间展示分类标签
+- 首页、订阅和媒体库统一使用宽搜索框，并在右侧保留提醒、设置和用户头像入口
+- 媒体库的历史、下载和播放列表使用独立的分段菜单，层级更清晰
+- Shorts 保持关闭，不参与双列视频流
+
+这些调整只改变界面布局和浏览体验，尽量与上游代码保持较小差异，便于后续继续同步 Opaline 更新。本项目与 Bilibili 无隶属或关联关系，仅参考其常见的信息布局方式。
+
 > ### YTLite is now Opaline
 >
 > The name was too close to [YTLite](https://github.com/dayanch96/YTLite), a
@@ -80,7 +94,7 @@ When Google dropped support for the official YouTube app on older devices, there
 - **Subtitles** — full subtitle/caption support with VTT parsing
 - **13 languages** — localized interface, with video titles/search/feeds following your language (see [Localization](#localization))
 - **Search & browse** — live suggestions, recent-search history, filters (sort, upload date, type, duration), channel pages, playlists
-- **Smart home feed** — endless recommendations with category chips read from your feed's shelves
+- **Smart home feed** — endless recommendations shown directly in a compact two-column feed
 - **Subscriptions** — follow channels with a local subscription feed
 - **Notifications** — a bell in the top bar collects app news and new-version announcements, with the full release notes in the message; system notifications are optional and everything still collects in-app if you decline
 - **Watch history** — progress indicators, synced across devices; a video resumes where you left it the moment you reopen it, without waiting for the server to catch up

@@ -21,30 +21,49 @@ extension SubscriptionsViewController {
 
 extension SubscriptionsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        isLoadingInitial
-            ? SubscriptionsViewController.skeletonCount
-            : rows.count
+        guard !isLoadingInitial else {
+            return (SubscriptionsViewController.skeletonCount + 1) / 2
+        }
+        let shelfRows = shortsShelf.isEmpty ? 0 : 1
+        return shelfRows + (videos.count + 1) / 2
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if !isLoadingInitial, case let .shortsShelf(shorts) = rows[indexPath.row] {
+        if !isLoadingInitial,
+           !shortsShelf.isEmpty,
+           indexPath.row == 0 {
+            let shorts = shortsShelf
             return shortsShelfCell(for: indexPath, shorts: shorts)
         }
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: SubscriptionVideoCell.reuseId,
+            withIdentifier: VideoGridRowCell.reuseId,
             for: indexPath
-        ) as? SubscriptionVideoCell else {
+        ) as? VideoGridRowCell else {
             return UITableViewCell()
         }
         if isLoadingInitial {
-            cell.configureSkeleton()
+            cell.configure(left: nil, right: nil)
             return cell
         }
-        guard case let .video(video) = rows[indexPath.row] else {
-            return cell
+        let shelfOffset = shortsShelf.isEmpty ? 0 : 1
+        let firstIndex = (indexPath.row - shelfOffset) * 2
+        guard firstIndex >= 0, firstIndex < videos.count else {
+            return UITableViewCell()
         }
-        cell.configure(with: video)
-        attachHandlers(to: cell, video: video)
+        let left = videos[firstIndex]
+        let right = firstIndex + 1 < videos.count
+            ? videos[firstIndex + 1]
+            : nil
+        cell.configure(left: left, right: right)
+        attachHandlers(to: cell.leftCell, video: left)
+        if let right {
+            attachHandlers(to: cell.rightCell, video: right)
+        }
+        cell.onVideoTap = { [weak self] video in
+            guard let self else { return }
+            self.markWatchedLocally(video)
+            self.videoRouter.open(video: video, from: self)
+        }
         return cell
     }
 
@@ -122,29 +141,26 @@ extension SubscriptionsViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard !isLoadingInitial,
-              case let .video(video) = rows[indexPath.row]
-        else {
-            return
-        }
-        markWatchedLocally(video)
-        videoRouter.open(video: video, from: self)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         guard !isLoadingInitial else {
-            return SubscriptionVideoCell.rowHeight(
-                forWidth: tableView.bounds.width, title: ""
+            return VideoGridRowCell.rowHeight(
+                forWidth: tableView.bounds.width,
+                titles: ["", ""]
             )
         }
-        switch rows[indexPath.row] {
-        case .shortsShelf:
+        if !shortsShelf.isEmpty, indexPath.row == 0 {
             return ShortsShelfCell.rowHeight
-        case let .video(video):
-            return SubscriptionVideoCell.rowHeight(
-                forWidth: tableView.bounds.width, title: video.title
-            )
         }
+        let firstIndex = (indexPath.row - (shortsShelf.isEmpty ? 0 : 1)) * 2
+        let titles = videos[firstIndex...min(firstIndex + 1, videos.count - 1)]
+            .map(\.title)
+        return VideoGridRowCell.rowHeight(
+            forWidth: tableView.bounds.width,
+            titles: titles
+        )
     }
 
     func tableView(
@@ -155,7 +171,8 @@ extension SubscriptionsViewController: UITableViewDelegate {
         guard !isLoadingInitial,
               !isLoadingMore,
               continuationToken != nil,
-              indexPath.row >= rows.count - 4
+              (indexPath.row - (shortsShelf.isEmpty ? 0 : 1)) * 2
+                >= videos.count - 4
         else { return }
 
         isLoadingMore = true

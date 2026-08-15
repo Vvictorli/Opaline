@@ -72,7 +72,9 @@ extension SubscriptionVideoCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         let width = contentView.bounds.width
-        if width > 500 {
+        if forceGridLayout {
+            layoutGrid(width: width)
+        } else if width > 500 {
             layoutHorizontal(width: width)
         } else {
             layoutVertical(width: width)
@@ -179,5 +181,53 @@ extension SubscriptionVideoCell {
         let channelTop = titleLabel.frame.maxY + 4
         channelLabel.frame = CGRect(x: textX, y: channelTop, width: textW, height: 16)
         dateLabel.frame = CGRect(x: textX, y: channelLabel.frame.maxY + 2, width: textW, height: 16)
+    }
+
+    /// Compact card used by the local two-column feed patch.
+    private func layoutGrid(width: CGFloat) {
+        let thumbH = (width * 9.0 / 16.0).rounded()
+        thumbnail.frame = CGRect(x: 0, y: 0, width: width, height: thumbH)
+
+        if !durationLabel.isHidden {
+            let dW = max(36, durationLabel.intrinsicContentSize.width + 8)
+            durationLabel.frame = CGRect(
+                x: width - dW - 6,
+                y: thumbH - 24,
+                width: dW,
+                height: 18
+            )
+        }
+
+        channelAvatarView.isHidden = true
+        let hPad: CGFloat = 6
+        let menuWidth: CGFloat = 40
+        let textX = hPad
+        let textW = max(0, width - textX - hPad - menuWidth)
+
+        let titleH = computeTitleHeight(for: textW)
+        titleLabel.frame = CGRect(
+            x: textX,
+            y: thumbH + 6,
+            width: textW,
+            height: titleH
+        )
+        menuButton.frame = CGRect(
+            x: width - menuWidth,
+            y: thumbH + 4,
+            width: menuWidth,
+            height: 44
+        )
+        dateLabel.frame = CGRect(
+            x: textX,
+            y: titleLabel.frame.maxY + 2,
+            width: textW,
+            height: 15
+        )
+        channelLabel.frame = CGRect(
+            x: textX,
+            y: dateLabel.frame.maxY + 2,
+            width: textW,
+            height: 15
+        )
     }
 }

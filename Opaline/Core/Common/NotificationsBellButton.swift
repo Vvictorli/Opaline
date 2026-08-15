@@ -17,18 +17,18 @@ final class NotificationsBellButton: UIButton {
     }()
 
     override init(frame: CGRect) {
-        super.init(frame: CGRect(x: 0, y: 0, width: 30, height: 30))
+        super.init(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
         setImage(resizedNavBarIcon("icon_bell", size: 22), for: .normal)
-        tintColor = ThemeManager.shared.isDark ? .white : .darkGray
+        tintColor = ThemeManager.shared.primaryText
         translatesAutoresizingMaskIntoConstraints = false
         addSubview(dotView)
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: 30),
-            heightAnchor.constraint(equalToConstant: 30),
+            widthAnchor.constraint(equalToConstant: 44),
+            heightAnchor.constraint(equalToConstant: 44),
             dotView.widthAnchor.constraint(equalToConstant: NotificationsBellButton.dotSize),
             dotView.heightAnchor.constraint(equalToConstant: NotificationsBellButton.dotSize),
-            dotView.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            dotView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2)
+            dotView.topAnchor.constraint(equalTo: topAnchor, constant: 7),
+            dotView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -7)
         ])
         for name in [
             AppNotificationStore.didChangeNotification,
@@ -48,7 +48,7 @@ final class NotificationsBellButton: UIButton {
 
     @objc
     func refresh() {
-        tintColor = ThemeManager.shared.isDark ? .white : .darkGray
+        tintColor = ThemeManager.shared.primaryText
         dotView.backgroundColor = ThemeManager.shared.newContentDot
         dotView.isHidden = AppNotificationStore.shared.unreadCount == 0
     }

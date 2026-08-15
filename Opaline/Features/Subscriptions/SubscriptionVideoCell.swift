@@ -18,6 +18,14 @@ class SubscriptionVideoCell: UITableViewCell {
     var onMenuTap: ((UIView) -> Void)?
     var cachedTitleHeight: CGFloat = 0
     var cachedTitleWidth: CGFloat = 0
+    var onVideoTap: (() -> Void)?
+    var forceGridLayout = false {
+        didSet {
+            if oldValue != forceGridLayout {
+                setNeedsLayout()
+            }
+        }
+    }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -96,10 +104,19 @@ class SubscriptionVideoCell: UITableViewCell {
         channelAvatarView.addGestureRecognizer(avatarTap)
         let labelTap = UITapGestureRecognizer(target: self, action: #selector(handleChannelTap))
         channelLabel.addGestureRecognizer(labelTap)
+        thumbnail.isUserInteractionEnabled = true
+        let thumbnailTap = UITapGestureRecognizer(target: self, action: #selector(handleVideoTap))
+        thumbnail.addGestureRecognizer(thumbnailTap)
+        titleLabel.isUserInteractionEnabled = true
+        let titleTap = UITapGestureRecognizer(target: self, action: #selector(handleVideoTap))
+        titleLabel.addGestureRecognizer(titleTap)
     }
 
     @objc
     private func handleChannelTap() { onChannelTap?() }
+
+    @objc
+    private func handleVideoTap() { onVideoTap?() }
 
     @objc
     private func handleMenuTap() { onMenuTap?(menuButton) }
@@ -139,8 +156,14 @@ class SubscriptionVideoCell: UITableViewCell {
             separator: " · "
         )
 
-        VideoCardHelper.loadChannelAvatar(for: video, into: channelAvatarView) { [weak self] in
-            self?.representedChannelId == video.channelId
+        if forceGridLayout {
+            channelAvatarView.cancel()
+            channelAvatarView.image = nil
+            channelAvatarView.isHidden = true
+        } else {
+            VideoCardHelper.loadChannelAvatar(for: video, into: channelAvatarView) { [weak self] in
+                self?.representedChannelId == video.channelId
+            }
         }
         VideoCardHelper.configureBadges(
             video: video,
@@ -175,6 +198,7 @@ class SubscriptionVideoCell: UITableViewCell {
         progressFill.isHidden = true
         onChannelTap = nil
         onMenuTap = nil
+        onVideoTap = nil
         cachedTitleHeight = 0
     }
 
@@ -189,6 +213,95 @@ class SubscriptionVideoCell: UITableViewCell {
             watchFraction = 0
             progressTrack.isHidden = true
             progressFill.isHidden = true
+        }
+    }
+}
+
+/// Two video cards sharing one table row. The surrounding screens keep their
+/// existing table and pagination code; this adapter only changes presentation.
+final class VideoGridRowCell: UITableViewCell {
+    static let reuseId = "VideoGridRowCell"
+
+    let leftCell = SubscriptionVideoCell(
+        style: .default,
+        reuseIdentifier: SubscriptionVideoCell.reuseId
+    )
+    let rightCell = SubscriptionVideoCell(
+        style: .default,
+        reuseIdentifier: SubscriptionVideoCell.reuseId
+    )
+    var onVideoTap: ((Video) -> Void)?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        contentView.addSubview(leftCell)
+        contentView.addSubview(rightCell)
+        leftCell.forceGridLayout = true
+        rightCell.forceGridLayout = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let gap: CGFloat = 8
+        let sideInset: CGFloat = 8
+        let width = max(0, (contentView.bounds.width - sideInset * 2 - gap) / 2)
+        leftCell.frame = CGRect(
+            x: sideInset,
+            y: 0,
+            width: width,
+            height: contentView.bounds.height
+        )
+        rightCell.frame = CGRect(
+            x: sideInset + width + gap,
+            y: 0,
+            width: width,
+            height: contentView.bounds.height
+        )
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        leftCell.prepareForReuse()
+        rightCell.prepareForReuse()
+        rightCell.isHidden = false
+        onVideoTap = nil
+    }
+
+    func configure(left: Video?, right: Video?) {
+        configure(cell: leftCell, with: left)
+        configure(cell: rightCell, with: right)
+        rightCell.isHidden = right == nil
+        setNeedsLayout()
+    }
+
+    static func rowHeight(forWidth width: CGFloat, titles: [String]) -> CGFloat {
+        let cardWidth = max(0, (width - 24) / 2)
+        let titleHeight = titles.map {
+            SubscriptionVideoCell.measuredTitleHeight(
+                text: $0,
+                width: max(0, cardWidth - 52)
+            )
+        }.max() ?? 0
+        let thumbHeight = (cardWidth * 9.0 / 16.0).rounded()
+        return thumbHeight + 6 + titleHeight + 2 + 15 + 2 + 15 + 6
+    }
+
+    private func configure(cell: SubscriptionVideoCell, with video: Video?) {
+        guard let video else {
+            cell.configureSkeleton()
+            return
+        }
+        cell.configure(with: video)
+        cell.onVideoTap = { [weak self] in
+            self?.onVideoTap?(video)
         }
     }
 }

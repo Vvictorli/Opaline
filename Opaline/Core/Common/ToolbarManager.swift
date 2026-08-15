@@ -24,7 +24,7 @@ func resizedNavBarIcon(_ name: String, size: CGFloat) -> UIImage? {
     return resized
 }
 
-/// Builds and manages the shared navigation bar buttons (Search + Settings + Profile/Avatar).
+/// Builds and manages the shared root navigation toolbar.
 /// Call `install(in:)` from any UIViewController that needs them.
 final class ToolbarManager {
     static let shared = ToolbarManager()
@@ -36,30 +36,21 @@ final class ToolbarManager {
     // MARK: - Install buttons in a view controller
 
     func install(in vc: UIViewController) {
-        let searchBtn = UIBarButtonItem(
-            image: resizedNavBarIcon("icon_Magnifyingglass", size: 22),
-            style: .plain,
+        let toolbar = PrimaryToolbarView(
             target: vc,
-            action: #selector(UIViewController.toolbarOpenSearch)
+            actions: PrimaryToolbarActions(
+                search: #selector(UIViewController.toolbarOpenSearch),
+                notifications: #selector(
+                    UIViewController.toolbarOpenNotifications
+                ),
+                settings: #selector(UIViewController.toolbarOpenSettings),
+                profile: #selector(UIViewController.toolbarOpenProfile)
+            )
         )
-
-        let settingsBtn = UIBarButtonItem(
-            image: resizedNavBarIcon("icon_Gear", size: 22),
-            style: .plain,
-            target: vc,
-            action: #selector(UIViewController.toolbarOpenSettings)
-        )
-
-        let profileBtn = makeProfileButton(
-            target: vc,
-            action: #selector(UIViewController.toolbarOpenProfile)
-        )
-
-        vc.navigationItem.rightBarButtonItems = [profileBtn, settingsBtn, searchBtn]
-        vc.navigationItem.leftBarButtonItem = makeBellButton(
-            target: vc,
-            action: #selector(UIViewController.toolbarOpenNotifications)
-        )
+        vc.title = nil
+        vc.navigationItem.leftBarButtonItem = nil
+        vc.navigationItem.rightBarButtonItems = nil
+        vc.navigationItem.titleView = toolbar
         NotificationCenter.default.addObserver(
             vc,
             selector: #selector(UIViewController.toolbarRefreshProfileButton),
@@ -68,20 +59,6 @@ final class ToolbarManager {
         )
     }
 
-    private func makeProfileButton(target: AnyObject, action: Selector) -> UIBarButtonItem {
-        let button = ProfileAvatarButton()
-        button.refresh()
-        button.addTarget(target, action: action, for: .touchUpInside)
-        button.addTapFeedback()
-        return UIBarButtonItem(customView: button)
-    }
-
-    private func makeBellButton(target: AnyObject, action: Selector) -> UIBarButtonItem {
-        let button = NotificationsBellButton()
-        button.addTarget(target, action: action, for: .touchUpInside)
-        button.addTapFeedback()
-        return UIBarButtonItem(customView: button)
-    }
 }
 
 // MARK: - UIViewController extension for toolbar actions
@@ -130,9 +107,7 @@ extension UIViewController {
 
     @objc
     func toolbarRefreshProfileButton() {
-        for item in navigationItem.rightBarButtonItems ?? [] {
-            (item.customView as? ProfileAvatarButton)?.refresh()
-        }
+        (navigationItem.titleView as? PrimaryToolbarView)?.refreshProfile()
     }
 }
 
@@ -176,25 +151,31 @@ extension AppDelegate {
 // MARK: - Profile Avatar Button
 
 final class ProfileAvatarButton: UIButton {
-    private let size: CGFloat = 30
+    private let avatarSize: CGFloat = 34
+    private let buttonSize: CGFloat = 44
 
     override init(frame: CGRect) {
-        super.init(frame: CGRect(x: 0, y: 0, width: 30, height: 30))
-        layer.cornerRadius = size / 2
-        clipsToBounds = true
-        contentMode = .scaleAspectFill
+        super.init(frame: CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize))
+        clipsToBounds = false
         imageView?.contentMode = .scaleAspectFill
+        imageView?.layer.cornerRadius = avatarSize / 2
+        imageView?.clipsToBounds = true
+        imageEdgeInsets = UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
         setImage(defaultImage(), for: .normal)
-        tintColor = ThemeManager.shared.isDark ? .white : .darkGray
+        tintColor = ThemeManager.shared.primaryText
         translatesAutoresizingMaskIntoConstraints = false
-        widthAnchor.constraint(equalToConstant: size).isActive = true
-        heightAnchor.constraint(equalToConstant: size).isActive = true
+        widthAnchor.constraint(equalToConstant: buttonSize).isActive = true
+        heightAnchor.constraint(equalToConstant: buttonSize).isActive = true
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(refresh),
             name: ThemeManager.didChangeNotification,
             object: nil
         )
+        // Secondary tabs may create their toolbar after the profile request
+        // completed, so initialize from the shared cache immediately instead
+        // of waiting for a notification that has already been delivered.
+        refresh()
     }
 
     @available(*, unavailable)
@@ -204,7 +185,9 @@ final class ProfileAvatarButton: UIButton {
 
     @objc
     func refresh() {
-        tintColor = ThemeManager.shared.isDark ? .white : .darkGray
+        tintColor = ThemeManager.shared.primaryText
+        accessibilityLabel = UserProfileStore.shared.displayName
+            ?? "profile.title".localized
         if let avatar = UserProfileStore.shared.avatarImage {
             setImage(avatar, for: .normal)
         } else {
@@ -217,18 +200,17 @@ final class ProfileAvatarButton: UIButton {
             return asset
         }
         if #available(iOS 13, *) {
-            let config = UIImage.SymbolConfiguration(pointSize: size, weight: .light)
+            let config = UIImage.SymbolConfiguration(pointSize: avatarSize, weight: .light)
             return UIImage(
                 systemName: "person.circle.fill",
                 withConfiguration: config
             )
         }
-        let color = ThemeManager.shared.isDark ? UIColor.white : UIColor.darkGray
-        return drawPersonPlaceholder(color: color)
+        return drawPersonPlaceholder(color: ThemeManager.shared.primaryText)
     }
 
     private func drawPersonPlaceholder(color: UIColor) -> UIImage {
-        let side = size
+        let side = avatarSize
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
         return renderer.image { ctx in
             let cgCtx = ctx.cgContext

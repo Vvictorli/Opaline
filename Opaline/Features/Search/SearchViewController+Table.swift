@@ -10,7 +10,7 @@ extension SearchViewController: UITableViewDataSource {
         _ tableView: UITableView,
         numberOfRowsInSection section: Int
     ) -> Int {
-        panelMode == .hidden ? results.count : panelItems.count
+        panelMode == .hidden ? (results.count + 1) / 2 : panelItems.count
     }
 
     func tableView(
@@ -30,14 +30,25 @@ extension SearchViewController: UITableViewDataSource {
             return panelCell(tableView, indexPath: indexPath)
         }
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: SubscriptionVideoCell.reuseId,
+            withIdentifier: VideoGridRowCell.reuseId,
             for: indexPath
-        ) as? SubscriptionVideoCell else {
+        ) as? VideoGridRowCell else {
             return UITableViewCell()
         }
-        let video = results[indexPath.row]
-        cell.configure(with: video)
-        attachHandlers(to: cell, video: video)
+        let firstIndex = indexPath.row * 2
+        let left = results[firstIndex]
+        let right = firstIndex + 1 < results.count
+            ? results[firstIndex + 1]
+            : nil
+        cell.configure(left: left, right: right)
+        attachHandlers(to: cell.leftCell, video: left)
+        if let right {
+            attachHandlers(to: cell.rightCell, video: right)
+        }
+        cell.onVideoTap = { [weak self] video in
+            guard let self else { return }
+            self.videoRouter.open(video: video, from: self)
+        }
         return cell
     }
 
@@ -112,8 +123,7 @@ extension SearchViewController: UITableViewDelegate {
             executePanelQuery(panelItems[indexPath.row])
             return
         }
-        let video = results[indexPath.row]
-        videoRouter.open(video: video, from: self)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 
     func tableView(
@@ -132,9 +142,12 @@ extension SearchViewController: UITableViewDelegate {
         guard panelMode == .hidden else {
             return Self.panelRowHeight
         }
-        return SubscriptionVideoCell.rowHeight(
+        let firstIndex = indexPath.row * 2
+        let titles = results[firstIndex...min(firstIndex + 1, results.count - 1)]
+            .map(\.title)
+        return VideoGridRowCell.rowHeight(
             forWidth: tableView.bounds.width,
-            title: results[indexPath.row].title
+            titles: titles
         )
     }
 
@@ -144,7 +157,7 @@ extension SearchViewController: UITableViewDelegate {
         forRowAt indexPath: IndexPath
     ) {
         guard panelMode == .hidden,
-              indexPath.row >= results.count - 4 else {
+              indexPath.row * 2 >= results.count - 4 else {
             return
         }
         loadNextPage()

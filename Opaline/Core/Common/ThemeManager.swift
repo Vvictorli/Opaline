@@ -18,6 +18,7 @@ class ThemeManager {
     private(set) var primaryText: UIColor  = .white
     private(set) var secondaryText: UIColor = UIColor(white: 0.55, alpha: 1)
     private(set) var separator: UIColor    = UIColor(white: 0.15, alpha: 1)
+    private(set) var controlSurface: UIColor = UIColor(white: 0.16, alpha: 1)
     private(set) var accent: UIColor       = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
     private(set) var durationBackground: UIColor = UIColor.black.withAlphaComponent(0.8)
     private(set) var liveBadgeBackground: UIColor = UIColor(red: 1, green: 0, blue: 0, alpha: 0.9)
@@ -190,6 +191,9 @@ class ThemeManager {
         primaryText   = dark ? .white : UIColor(white: 0.1, alpha: 1)
         secondaryText = dark ? UIColor(white: 0.55, alpha: 1) : UIColor(white: 0.45, alpha: 1)
         separator     = dark ? UIColor(white: 0.15, alpha: 1) : UIColor(white: 0.88, alpha: 1)
+        controlSurface = dark
+            ? UIColor(white: 0.16, alpha: 1)
+            : UIColor(white: 0.93, alpha: 1)
         accent        = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
         durationBackground = UIColor.black.withAlphaComponent(0.8)
         liveBadgeBackground = UIColor(red: 1, green: 0, blue: 0, alpha: 0.9)

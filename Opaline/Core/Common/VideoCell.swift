@@ -3,11 +3,10 @@ import UIKit
 
 class VideoCell: UICollectionViewCell {
     static let reuseId = "VideoCell"
+    static let gridCaptionHeight: CGFloat = 74
 
     private static let avatarSize: CGFloat = 32
     private static let hPad: CGFloat = 6
-    private static let avatarGap: CGFloat = 10
-    private static let vPadAfterThumb: CGFloat = 8
 
     private let thumbnail = ThumbnailImageView(frame: .zero)
     private let durationLabel = UILabel()
@@ -260,24 +259,23 @@ extension VideoCell {
             let lx = cellWidth - lW - 6
             liveBadgeView.frame = CGRect(x: lx, y: thumbH - 22, width: lW, height: 14)
         }
-        let hp = VideoCell.hPad
-        let avatarSz: CGFloat = channelAvatarView.isHidden ? 0 : VideoCell.avatarSize
-        let avatarX: CGFloat = hp
-        let textX = avatarSz > 0 ? avatarX + avatarSz + VideoCell.avatarGap : hp
-        let textW = cellWidth - textX - hp
-        let avatarY = thumbH + VideoCell.vPadAfterThumb
-        if !channelAvatarView.isHidden {
-            let sz = avatarSz
-            channelAvatarView.frame = CGRect(x: avatarX, y: avatarY, width: sz, height: sz)
-        }
+        channelAvatarView.isHidden = true
+        let textX = VideoCell.hPad
+        let menuWidth: CGFloat = 40
+        let textW = max(0, cellWidth - textX - VideoCell.hPad - menuWidth)
         let titleTop = thumbH + VideoCell.hPad
-        let titleH = computeTitleHeight(for: textW - 40)
-        titleLabel.frame = CGRect(x: textX, y: titleTop, width: textW - 40, height: titleH)
-        menuButton.frame = CGRect(x: cellWidth - 40, y: titleTop, width: 40, height: 40)
-        let channelTop = titleLabel.frame.maxY + 2
-        channelLabel.frame = CGRect(x: textX, y: channelTop, width: textW, height: 14)
-        let metaTop = channelLabel.frame.maxY + 2
+        let titleH = computeTitleHeight(for: textW)
+        titleLabel.frame = CGRect(x: textX, y: titleTop, width: textW, height: titleH)
+        menuButton.frame = CGRect(
+            x: cellWidth - menuWidth,
+            y: titleTop - 2,
+            width: menuWidth,
+            height: 44
+        )
+        let metaTop = titleLabel.frame.maxY + 2
         metaLabel.frame = CGRect(x: textX, y: metaTop, width: textW, height: 14)
+        let channelTop = metaLabel.frame.maxY + 2
+        channelLabel.frame = CGRect(x: textX, y: channelTop, width: textW, height: 14)
     }
 }
 
@@ -333,11 +331,17 @@ extension VideoCell {
             viewCount: video.viewCount,
             publishedAt: video.publishedAt
         )
-        VideoCardHelper.loadChannelAvatar(
-            for: video,
-            into: channelAvatarView
-        ) { [weak self] in
-            self?.representedChannelId == video.channelId
+        if forceGridLayout {
+            channelAvatarView.cancel()
+            channelAvatarView.image = nil
+            channelAvatarView.isHidden = true
+        } else {
+            VideoCardHelper.loadChannelAvatar(
+                for: video,
+                into: channelAvatarView
+            ) { [weak self] in
+                self?.representedChannelId == video.channelId
+            }
         }
         VideoCardHelper.configureBadges(
             video: video,

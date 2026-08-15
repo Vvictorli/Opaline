@@ -46,12 +46,6 @@ extension HomeViewController {
                 let age = self.cache.feedAge("home") ?? .greatestFiniteMagnitude
                 guard age >= AppCache.feedRevalidateAfter else {
                     AppLog.home("cache is \(Int(age / 60))m old → no revalidation")
-                    // The cache holds one page, so it only knows a few
-                    // shelves. Collect the rest the way a fresh load does —
-                    // this appends pages below the fold and never touches
-                    // what is already on screen.
-                    self.beginChipDiscovery()
-                    self.continueChipPrefetchIfNeeded()
                     // Nothing else is going to hit the network for this
                     // screen, so the other tabs may as well start now.
                     self.postFeedDidSettle()
@@ -100,7 +94,6 @@ extension HomeViewController {
         errorLabel.isHidden = true
         signInEmptyView.isHidden = true
         resetShelfDrain()
-        beginChipDiscovery()
         let generation = feedGeneration
         service.fetchHomeFeed { [weak self] result in
             DispatchQueue.main.async {

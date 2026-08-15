@@ -4,7 +4,10 @@ import UIKit
 
 extension PlaylistVideosViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        isLoading ? PlaylistVideosViewController.skeletonCount : videos.count
+        let count = isLoading
+            ? PlaylistVideosViewController.skeletonCount
+            : videos.count
+        return (count + 1) / 2
     }
 
     func tableView(
@@ -12,18 +15,29 @@ extension PlaylistVideosViewController: UITableViewDataSource, UITableViewDelega
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: SubscriptionVideoCell.reuseId,
+            withIdentifier: VideoGridRowCell.reuseId,
             for: indexPath
-        ) as? SubscriptionVideoCell else {
+        ) as? VideoGridRowCell else {
             return UITableViewCell()
         }
         if isLoading {
-            cell.configureSkeleton()
+            cell.configure(left: nil, right: nil)
             return cell
         }
-        let video = videos[indexPath.row]
-        cell.configure(with: video)
-        attachHandlers(to: cell, video: video)
+        let firstIndex = indexPath.row * 2
+        let left = videos[firstIndex]
+        let right = firstIndex + 1 < videos.count
+            ? videos[firstIndex + 1]
+            : nil
+        cell.configure(left: left, right: right)
+        attachHandlers(to: cell.leftCell, video: left)
+        if let right {
+            attachHandlers(to: cell.rightCell, video: right)
+        }
+        cell.onVideoTap = { [weak self] video in
+            guard let self else { return }
+            self.videoRouter.open(video: video, from: self)
+        }
         return cell
     }
 
@@ -76,12 +90,22 @@ extension PlaylistVideosViewController: UITableViewDataSource, UITableViewDelega
         guard !isLoading else {
             return
         }
-        let video = videos[indexPath.row]
-        videoRouter.open(video: video, from: self)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let title = isLoading ? "" : videos[indexPath.row].title
-        return SubscriptionVideoCell.rowHeight(forWidth: tableView.bounds.width, title: title)
+        guard !isLoading else {
+            return VideoGridRowCell.rowHeight(
+                forWidth: tableView.bounds.width,
+                titles: ["", ""]
+            )
+        }
+        let firstIndex = indexPath.row * 2
+        let titles = videos[firstIndex...min(firstIndex + 1, videos.count - 1)]
+            .map(\.title)
+        return VideoGridRowCell.rowHeight(
+            forWidth: tableView.bounds.width,
+            titles: titles
+        )
     }
 }

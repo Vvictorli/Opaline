@@ -72,8 +72,8 @@ final class PlaylistVideosViewController: UIViewController {
 
     private func setupTableView() {
         tableView.register(
-            SubscriptionVideoCell.self,
-            forCellReuseIdentifier: SubscriptionVideoCell.reuseId
+            VideoGridRowCell.self,
+            forCellReuseIdentifier: VideoGridRowCell.reuseId
         )
         tableView.dataSource = self
         tableView.delegate = self
